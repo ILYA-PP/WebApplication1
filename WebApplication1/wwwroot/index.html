@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Авторизация</title>
+</head>
+<body>
+    <div id="loginForm">
+        <h3>Вход</h3>
+        <label>Введите логин:</label><br />
+        <input type="email" id="Login" /> <br /><br />
+        <label>Введите пароль:</label><br />
+        <input type="password" id="Password" /><br /><br />
+        <input type="submit" id="submitLogin" value="Войти" />
+    </div>
+
+    <script type="text/javascript">
+        var tokenKey = "accessToken";
+    
+        // отпавка запроса к контроллеру AccountController для получения токена
+        async function getTokenAsync() {
+            // получаем данные формы и фомируем объект для отправки
+            const formData = new FormData();
+            formData.append("login", document.getElementById("Login").value);
+            formData.append("password", document.getElementById("Password").value);
+
+            // отправляет запрос и получаем ответ
+            const response = await fetch("/token", {
+                method: "post",
+                headers: {
+                    'Accept': 'multipart/form-data'
+                },
+                body: formData
+            });
+            // получаем данные
+            const data = await response.json();
+            // если запрос прошел нормально
+            if (response.ok === true) {
+                // сохраняем в хранилище sessionStorage токен доступа
+                sessionStorage.setItem(tokenKey, data.access_token);
+                console.log(data.access_token);
+            }
+            else {
+                // если произошла ошибка, из errorText получаем текст ошибки
+                alert("Error: ", response.status, data.errorText);
+            }
+        };
+        // отправка запроса к контроллеру ValuesController
+        async function getData(url) {
+            const token = sessionStorage.getItem(tokenKey);
+            const response = await fetch(url, {
+                method: "GET",
+                headers: {
+                    "Accept": "application/json",
+                    "Authorization": "Bearer " + token  // передача токена в заголовке
+                }
+            });
+            if (response.ok === true) {
+
+                const data = await response.text();
+                alert(data);
+            }
+            else
+                console.log("Status: ", response.status);
+        };
+
+        // получаем токен
+        document.getElementById("submitLogin").addEventListener("click", e => {
+            e.preventDefault();
+            //аутентификация
+            getTokenAsync();
+            //авторизация
+            getData("/api/values");
+        });
+
+    </script>
+</body>
+</html>
